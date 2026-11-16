@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const generateBtn = document.getElementById('generateBtn');
+    const recipeForm = document.getElementById('recipeForm');
     const ingredientsInput = document.getElementById('ingredients');
     const loadingDiv = document.getElementById('loading');
     const recipeContainer = document.getElementById('recipeContainer');
@@ -7,11 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorContainer = document.getElementById('errorContainer');
     const errorContent = document.getElementById('errorContent');
 
-    generateBtn.addEventListener('click', async () => {
+    recipeForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
         const ingredients = ingredientsInput.value.trim();
         
         if (!ingredients) {
-            alert("Please enter some ingredients first!");
+            ingredientsInput.focus();
             return;
         }
 
@@ -20,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         errorContainer.classList.add('hidden');
         loadingDiv.classList.remove('hidden');
         generateBtn.disabled = true;
-        generateBtn.textContent = 'Cooking...';
+        generateBtn.textContent = 'Making your recipe…';
 
         try {
             const response = await fetch('/api/recipe', {
@@ -40,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Parse Markdown response using generic marked library
             recipeContent.innerHTML = marked.parse(data.recipe);
             recipeContainer.classList.remove('hidden');
+            recipeContainer.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
 
         } catch (error) {
             errorContent.textContent = "Oops! Something went wrong: " + error.message;
@@ -47,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             loadingDiv.classList.add('hidden');
             generateBtn.disabled = false;
-            generateBtn.textContent = 'Generate Recipe';
+            generateBtn.innerHTML = 'Get a recipe <span aria-hidden="true">↗</span>';
         }
     });
 });

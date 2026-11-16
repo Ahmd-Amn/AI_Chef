@@ -1,43 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-type="software">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chef</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <!-- Marked.js for markdown parsing -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="page-type" content="software">
+  <meta name="site-kind" content="software">
+  <meta name="theme-color" content="#f3f0e8">
+  <meta name="description" content="Make a recipe from the ingredients you have.">
+  <title>AI Chef — recipes from your ingredients</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>👨‍🍳 AI Chef</h1>
-            <p>Tell me what you have, and I'll tell you what to make.</p>
-        </header>
-
-        <main>
-            <div class="input-section glass-panel">
-                <label for="ingredients">What ingredients do you have?</label>
-                <textarea id="ingredients" placeholder="e.g. Chicken, rice, broccoli, garlic..." rows="3"></textarea>
-                <button id="generateBtn">Generate Recipe</button>
-            </div>
-
-            <div id="loading" class="hidden">
-                <div class="spinner"></div>
-                <p>The Chef is thinking...</p>
-            </div>
-
-            <div id="recipeContainer" class="hidden glass-panel">
-                <div id="recipeContent"></div>
-            </div>
-            
-            <div id="errorContainer" class="hidden error-panel">
-                <p id="errorContent"></p>
-            </div>
-        </main>
-    </div>
-
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <a class="skip-link" href="#main">Skip to recipe maker</a>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="AI Chef home"><span class="brand-mark" aria-hidden="true">✳</span> AI Chef</a>
+      <span class="header-note">Your kitchen, a new idea.</span>
+    </header>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title" data-enter>
+        <div class="hero-copy">
+          <p class="eyebrow">The recipe maker</p>
+          <h1 id="hero-title">A recipe for what’s already in your kitchen.</h1>
+          <p class="intro">Enter a few ingredients. AI Chef turns them into a recipe with a list and steps you can follow.</p>
+          <form id="recipeForm" class="recipe-form">
+            <label for="ingredients">Ingredients you have</label>
+            <textarea id="ingredients" placeholder="Chicken, rice, broccoli, garlic…" rows="4" required></textarea>
+            <div class="form-bottom"><span>Separate ingredients with commas</span><button id="generateBtn" type="submit">Get a recipe <span aria-hidden="true">↗</span></button></div>
+          </form>
+        </div>
+        <div class="recipe-preview" aria-hidden="true">
+          <div class="preview-top"><span>Tonight’s inspiration</span><span>01 / 01</span></div>
+          <div class="plate-art"><div class="plate"><div class="food one"></div><div class="food two"></div><div class="food three"></div><div class="food four"></div><div class="herb a"></div><div class="herb b"></div><div class="herb c"></div></div></div>
+          <div class="preview-bottom"><span>Good food starts here.</span><span>✳</span></div>
+        </div>
+      </section>
+      <section id="loading" class="status hidden" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span> Making your recipe…</section>
+      <section id="errorContainer" class="error-panel hidden" role="alert"><p id="errorContent"></p></section>
+      <section id="recipeContainer" class="result hidden" aria-labelledby="result-title"><div class="result-heading"><p class="eyebrow">Made for your kitchen</p><h2 id="result-title">Your recipe</h2></div><div id="recipeContent"></div></section>
+    </main>
+    <footer>AI Chef <span>Cook with what you have.</span></footer>
+  </div>
 </body>
 </html>
