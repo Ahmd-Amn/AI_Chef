@@ -3,4 +3,7 @@ __pycache__/
 venv/
 env/
 .venv/
-AI_Chef_overview/
+AI_Chef_Upgrade_Plan.md
+
+ai_chef.db
+ai_chef.db-*
