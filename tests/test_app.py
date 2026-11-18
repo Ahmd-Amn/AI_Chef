@@ -1,20 +1,34 @@
 import os
-import tempfile
 import unittest
 from unittest.mock import patch
 
 from google.genai.errors import ServerError
 
-_db_dir = tempfile.TemporaryDirectory()
-os.environ['DATABASE'] = os.path.join(_db_dir.name, 'test.db')
 os.environ['SECRET_KEY'] = 'test-only-secret'
 
-from app import app  # noqa: E402
+from app import app, db, init_db, query  # noqa: E402
 
 
+@unittest.skipUnless(
+    os.environ.get('MYSQL_TEST_DATABASE', '').endswith('_test')
+    and all(name in os.environ for name in ('MYSQL_TEST_HOST', 'MYSQL_TEST_USER', 'MYSQL_TEST_PASSWORD')),
+    'Set MYSQL_TEST_HOST, MYSQL_TEST_USER, MYSQL_TEST_PASSWORD, and MYSQL_TEST_DATABASE ending in _test',
+)
 class AppTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        os.environ['MYSQL_HOST'] = os.environ['MYSQL_TEST_HOST']
+        os.environ['MYSQL_PORT'] = os.environ.get('MYSQL_TEST_PORT', '4000')
+        os.environ['MYSQL_USER'] = os.environ['MYSQL_TEST_USER']
+        os.environ['MYSQL_PASSWORD'] = os.environ['MYSQL_TEST_PASSWORD']
+        os.environ['MYSQL_DATABASE'] = os.environ['MYSQL_TEST_DATABASE']
+        init_db()
+
     def setUp(self):
         app.config['TESTING'] = True
+        with app.app_context():
+            query('DELETE FROM users')
+            db().commit()
         self.client = app.test_client()
         self.csrf = self._token(self.client)
 
@@ -77,6 +91,22 @@ class AppTest(unittest.TestCase):
             self.assertEqual([call.kwargs['model'] for call in generate.call_args_list],
                              ['gemini-3.8-flash', 'gemini-3.5-flash-lite'])
         self.assertEqual(response.status_code, 200)
+
+
+class DeploymentTest(unittest.TestCase):
+    def test_tidb_connection_uses_tls(self):
+        settings = {'MYSQL_HOST': 'example.tidbcloud.com', 'MYSQL_PORT': '4000',
+                    'MYSQL_USER': 'chef', 'MYSQL_PASSWORD': 'secret', 'MYSQL_DATABASE': 'ai_chef'}
+        with patch.dict(os.environ, settings), patch('app.ssl.create_default_context') as tls, patch('app.pymysql.connect') as connect:
+            with app.app_context():
+                db()
+            self.assertEqual(connect.call_args.kwargs['host'], settings['MYSQL_HOST'])
+            self.assertIs(connect.call_args.kwargs['ssl'], tls.return_value)
+
+    def test_static_assets_are_available_locally(self):
+        response = app.test_client().get('/static/style.css')
+        self.assertEqual(response.status_code, 200)
+        response.close()
 
 
 if __name__ == '__main__':

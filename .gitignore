@@ -8,5 +8,6 @@ AI_Chef_Upgrade_Plan.md
 ai_chef.db
 ai_chef.db-*
 
-graphify-out/
 setup.md
+schema.sql
+
