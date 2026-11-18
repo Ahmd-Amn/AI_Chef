@@ -35,6 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
         $('email').focus();
     }
     $('authClose').addEventListener('click', () => $('authPanel').close());
+    $('showPassword').addEventListener('click', () => {
+        const visible = $('password').type === 'password';
+        $('password').type = visible ? 'text' : 'password';
+        $('showPassword').textContent = visible ? 'Hide' : 'Show';
+        $('showPassword').setAttribute('aria-label', `${visible ? 'Hide' : 'Show'} password`);
+        $('showPassword').setAttribute('aria-pressed', String(visible));
+    });
 
     $('authBtn').addEventListener('click', async () => {
         if (!loggedIn) return showAuth();

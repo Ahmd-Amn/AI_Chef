@@ -93,6 +93,9 @@ dialog::backdrop{background:#101812ad}
 .auth-panel form{display:grid;gap:10px}
 .auth-panel label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .auth-panel input{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);margin-bottom:10px}
+.auth-panel .password-field{position:relative}
+.auth-panel .password-field input{padding-right:76px}
+.auth-panel .password-field button{position:absolute;right:9px;top:5px;min-height:38px;padding:0 8px;border:0;background:transparent;color:var(--forest);font-size:12px;cursor:pointer;margin:0}
 .auth-panel form button{margin-top:5px}
 .auth-panel #authError{color:#8c392e;margin:0}
 .auth-panel #authSwitch{margin-top:18px}
