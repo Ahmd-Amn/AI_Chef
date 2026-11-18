@@ -5,46 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="page-type" content="software">
   <meta name="site-kind" content="software">
-  <meta name="theme-color" content="#f3f0e8">
+  <meta name="theme-color" content="#171d19">
   <meta name="description" content="Make a recipe from the ingredients you have.">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <title>AI Chef — recipes from your ingredients</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" defer></script>
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to recipe maker</a>
   <div class="page-shell">
     <header class="site-header">
-      <a class="brand" href="/" aria-label="AI Chef home"><span class="brand-mark" aria-hidden="true">✳</span> AI Chef</a>
-      <span class="header-note">Your kitchen, a new idea.</span>
+      <a class="brand" href="/" aria-label="AI Chef home"><span class="brand-mark" aria-hidden="true">✳</span><span>AI CHEF<small>THE RECIPE ATELIER</small></span></a>
+      <nav class="header-actions" aria-label="Account"><button id="historyBtn" type="button"><span aria-hidden="true">▤</span> History</button><button id="favoritesBtn" type="button"><span aria-hidden="true">♡</span> Favorites</button><button id="authBtn" type="button">{{ 'Log out' if logged_in else 'Log in' }} <span aria-hidden="true">↗</span></button></nav>
     </header>
     <main id="main">
       <section class="hero" aria-labelledby="hero-title" data-enter>
         <div class="hero-copy">
-          <p class="eyebrow">The recipe maker</p>
-          <h1 id="hero-title">A recipe for what’s already in your kitchen.</h1>
-          <p class="intro">Enter a few ingredients. AI Chef turns them into a recipe with a list and steps you can follow.</p>
+          <p class="eyebrow">A table set for possibility <span>✦</span> Est. in your kitchen</p>
+          <h1 id="hero-title">Your ingredients.<br><em>Something exquisite.</em></h1>
+          <p class="intro">Tell us what you have. We’ll compose a recipe worth sitting down for. No account needed to cook; sign in to keep the good ones.</p>
           <form id="recipeForm" class="recipe-form">
-            <label for="ingredients">Ingredients you have</label>
+            <label for="ingredients">What’s on your counter?</label>
             <textarea id="ingredients" placeholder="Chicken, rice, broccoli, garlic…" rows="4" required></textarea>
-            <div class="form-bottom"><span>Separate ingredients with commas</span><button id="generateBtn" type="submit">Get a recipe <span aria-hidden="true">↗</span></button></div>
+            <div class="form-bottom"><span>List your ingredients, separated by commas</span><button id="generateBtn" type="submit">Get a recipe <span aria-hidden="true">↗</span></button></div>
           </form>
         </div>
-        <div class="recipe-preview" aria-hidden="true">
-          <div class="preview-top"><span>Tonight’s inspiration</span><span>01 / 01</span></div>
+        <div class="recipe-preview" id="recipePreview">
+          <div id="previewArt" aria-hidden="true"><div class="preview-top"><span>THE CHEF’S NOTEBOOK</span><span>№ 01</span></div>
           <div class="plate-art"><div class="plate"><div class="food one"></div><div class="food two"></div><div class="food three"></div><div class="food four"></div><div class="herb a"></div><div class="herb b"></div><div class="herb c"></div></div></div>
-          <div class="preview-bottom"><span>Good food starts here.</span><span>✳</span></div>
+          <div class="preview-bottom"><span>Tonight begins here.</span><span>✳</span></div></div>
+          <section id="recipeContainer" class="result hidden" aria-labelledby="result-title"><div class="result-heading"><p class="eyebrow">Made for your kitchen</p><h2 id="result-title">Your recipe</h2><button id="favoriteBtn" type="button">Add to favorites</button></div><div id="recipeContent"></div></section>
         </div>
       </section>
       <section id="loading" class="status hidden" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span> Making your recipe…</section>
       <section id="errorContainer" class="error-panel hidden" role="alert"><p id="errorContent"></p></section>
-      <section id="recipeContainer" class="result hidden" aria-labelledby="result-title"><div class="result-heading"><p class="eyebrow">Made for your kitchen</p><h2 id="result-title">Your recipe</h2></div><div id="recipeContent"></div></section>
+      <dialog id="library" class="library" aria-labelledby="libraryTitle"><div class="library-heading"><h2 id="libraryTitle">Recipe history</h2><button id="closeLibrary" type="button" aria-label="Close tray">×</button></div><div id="recipeList"></div></dialog>
+      <dialog id="authPanel" class="auth-panel" aria-labelledby="authTitle"><button id="authClose" class="auth-close" type="button" aria-label="Close">×</button><h2 id="authTitle">Log in</h2><p id="authIntro">Keep your recipes and favorites in one place.</p><form id="authForm"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required><label for="password">Password</label><input id="password" type="password" minlength="12" autocomplete="current-password" required><p id="authError" role="alert"></p><button id="authSubmit" type="submit">Log in</button></form><button id="authSwitch" type="button">Create an account</button></dialog>
     </main>
-    <footer>AI Chef <span>Cook with what you have.</span></footer>
+    <footer>AI CHEF <span>Good taste begins with what you have.</span></footer>
   </div>
 </body>
 </html>
