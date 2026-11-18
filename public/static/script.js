@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ...options,
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf, ...options.headers }
         });
+        if (!response.headers.get('content-type')?.includes('application/json')) {
+            throw new Error(`${path} returned HTTP ${response.status} instead of JSON. Check the Vercel function logs.`);
+        }
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Something went wrong.');
         return data;
