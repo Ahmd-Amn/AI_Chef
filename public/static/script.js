@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf, ...options.headers }
         });
         if (!response.headers.get('content-type')?.includes('application/json')) {
-            throw new Error(`${path} returned HTTP ${response.status} instead of JSON. Check the Vercel function logs.`);
+            throw new Error('Could not complete the request. Please try again.');
         }
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Something went wrong.');
@@ -19,9 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showRecipe(data) {
-        currentRecipe = data;
+        $('startCooking').hidden = !data.steps?.length;
         if (!window.marked || !window.DOMPurify) throw new Error('Recipe viewer could not load. Refresh the page.');
-        $('recipeContent').innerHTML = DOMPurify.sanitize(marked.parse(data.recipe));
+        const rendered = DOMPurify.sanitize(marked.parse(data.recipe));
+        currentRecipe = data;
+        $('recipeContent').innerHTML = rendered;
         $('favoriteBtn').textContent = data.favorite ? 'Remove from favorites' : 'Add to favorites';
         $('favoriteBtn').hidden = !loggedIn || !data.id;
         $('previewArt').classList.add('hidden');
@@ -29,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
         $('recipeContainer').classList.remove('hidden');
         $('recipeContainer').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     }
+
+    $('startCooking').onclick = () => document.dispatchEvent(new CustomEvent('cooking:start', {detail: currentRecipe}));
 
     function showAuth() {
         $('authPanel').showModal();
@@ -76,7 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const ingredients = $('ingredients').value.trim();
         if (!ingredients) return $('ingredients').focus();
-        $('recipeContainer').classList.add('hidden');
         $('errorContainer').classList.add('hidden');
         $('loading').classList.remove('hidden');
         $('generateBtn').disabled = true;
@@ -89,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             $('loading').classList.add('hidden');
             $('generateBtn').disabled = false;
-            $('generateBtn').innerHTML = 'Get a recipe <span aria-hidden="true">↗</span>';
+            $('generateBtn').innerHTML = 'Get a recipe <span aria-hidden="true"></span>';
         }
     });
 
@@ -104,32 +107,5 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { alert(error.message); }
     });
 
-    async function openLibrary(favorites) {
-        if (!loggedIn) return showAuth();
-        try {
-            const data = await api(favorites ? '/api/favorites' : '/api/recipes');
-            $('libraryTitle').textContent = favorites ? 'Favorites' : 'Recipe history';
-            $('recipeList').replaceChildren();
-            if (!data.recipes.length) $('recipeList').textContent = favorites ? 'No favorites yet.' : 'No recipes yet.';
-            for (const recipe of data.recipes) {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'recipe-row';
-                button.textContent = `${recipe.title} · ${recipe.ingredients} · ${recipe.created_at}${recipe.favorite ? ' ♥' : ''}`;
-                button.addEventListener('click', async () => {
-                    try {
-                        const data = await api(`/api/recipes/${recipe.id}`);
-                        $('library').close();
-                        showRecipe(data);
-                    }
-                    catch (error) { alert(error.message); }
-                });
-                $('recipeList').append(button);
-            }
-            $('library').showModal();
-        } catch (error) { alert(error.message); }
-    }
-    $('historyBtn').addEventListener('click', () => openLibrary(false));
-    $('favoritesBtn').addEventListener('click', () => openLibrary(true));
-    $('closeLibrary').addEventListener('click', () => $('library').close());
+    document.addEventListener('recipe:selected', event => showRecipe(event.detail));
 });

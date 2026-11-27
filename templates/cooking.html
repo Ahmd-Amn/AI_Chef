@@ -1,0 +1,12 @@
+<p id="timerAnnouncement" role="status" aria-live="polite" aria-atomic="true"></p>
+<dialog id="cooking" class="library" aria-labelledby="stepTitle">
+  <button id="backToRecipe" type="button">Back to recipe</button>
+  <h2 id="stepTitle"></h2><p id="instruction" aria-live="polite"></p>
+  <label>Timer in minutes <input id="minutes" type="number" min="1" max="1440" required value="5"></label>
+  <p id="timerStep"></p>
+  <button id="timer" type="button">Start timer</button>
+  <button id="stopTimer" type="button" hidden>Stop timer</button>
+  <output id="remaining" aria-live="off"></output>
+  <div><button id="previous" type="button">Previous</button> <button id="next" type="button">Next</button> <button id="finish" type="button">Finish cooking</button></div>
+</dialog>
+<script src="{{ url_for('static', filename='cooking.js') }}" defer></script>

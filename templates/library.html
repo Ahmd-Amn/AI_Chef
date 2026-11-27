@@ -1,0 +1,12 @@
+<dialog id="library" class="library" aria-labelledby="libraryTitle">
+  <div class="library-heading"><h2 id="libraryTitle">Recipe history</h2><button id="closeLibrary" type="button" aria-label="Close recipes">×</button></div>
+  <p id="libraryStatus" role="status"></p>
+  <div id="recipeList"></div>
+  <section id="libraryDetail" hidden>
+    <button id="libraryBack" type="button">Back to list</button>
+    <button id="libraryFavorite" type="button">Add to favorites</button>
+    <button id="libraryCooking" type="button">Start cooking</button>
+    <div id="libraryRecipe"></div>
+  </section>
+</dialog>
+<script src="{{ url_for('static', filename='library.js') }}" defer></script>

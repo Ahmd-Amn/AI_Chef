@@ -1,0 +1,7 @@
+@layer theme, utilities;
+@theme {
+  --spacing: 0.25rem;
+  --radius-xl: 0.75rem;
+  --shadow-sm: 0 2px 8px rgb(24 39 32 / 0.06);
+}
+@tailwind utilities;

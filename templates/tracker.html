@@ -1,0 +1,30 @@
+{% extends "workspace.html" %}
+{% block title %}Food tracker{% endblock %}
+{% block heading %}Food tracker{% endblock %}
+{% block description %}Log your meals and review your daily nutrition.{% endblock %}
+{% block image %}3{% endblock %}
+{% block content %}
+{% if error %}<p role="alert">{{ error }}</p>{% endif %}
+{% macro token() %}<input type="hidden" name="token" value="{{ session.csrf_token }}"><input type="hidden" name="date" value="{{ selected }}">{% endmacro %}
+{% macro nutrients(values) %}{{ values[0] }} kcal · Protein {{ values[1] }} g · Carbs {{ values[2] }} g · Fat {{ values[3] }} g{% endmacro %}
+<form method="get" class="date-filter"><label>Day <input type="date" name="date" value="{{ selected }}" required></label><button>View day</button></form>
+<p id="estimateStatus" role="status" aria-live="polite"></p>
+<script src="{{ url_for('static', filename='tracker.js') }}" defer></script>
+<form method="post" class="shadow-sm rounded-xl recipe-form meal-form">{{ token() }}
+<div class="form-heading"><h2>Enter your meal</h2><p>What did you eat? List your food and drinks below.</p></div>
+<label class="full-width">Your meal<input class="form-control" name="meal_name" value="{{ request.form.get('meal_name', '') }}" placeholder="nasi putih, kari ayam, air milo" maxlength="500" required aria-describedby="mealHelp"></label><p id="mealHelp" class="field-hint full-width">Separate foods with commas. Malay and English meal names are welcome.</p>
+<label class="full-width">Portion details <span class="field-hint">Optional · leave blank to review typical portions</span><input class="form-control" name="meal_portion" value="{{ request.form.get('meal_portion', '') }}" placeholder="1 cup rice, 1 piece chicken, 1 glass Milo" maxlength="200"></label>
+<div class="form-actions gap-4"><p class="field-hint">Review the estimate before adding it to your log.</p><button class="btn btn-primary" name="action" value="estimate">Estimate nutrition</button></div></form>
+{% if preview %}<form method="post" class="shadow-sm rounded-xl recipe-form estimate-review">{{ token() }}
+<div class="form-heading"><h2>Review your estimate</h2><p>Review AI estimate · Check the portions and adjust any values before saving.</p></div>
+<label>Meal<input class="form-control" name="meal_name" value="{{ preview.name }}" maxlength="500" required></label>
+<label>Portions<input class="form-control" name="meal_portion" value="{{ preview.portion }}" maxlength="200" required></label>
+{% for key,label in [('kcal','Calories (kcal)'),('protein_g','Protein (g)'),('carbs_g','Carbohydrate (g)'),('fat_g','Fat (g)')] %}
+<label>{{ label }}<input class="form-control" name="{{ key }}" type="number" value="{{ preview['values'][loop.index0] }}" min="0" max="10000" step="any" required></label>
+{% endfor %}<div class="form-actions gap-4"><button class="btn btn-primary" name="action" value="save_custom">Confirm and save meal</button></div></form>{% endif %}
+<h2>Daily total</h2><p>{{ nutrients(daily) }}</p>
+<h2>Seven days ending {{ selected }}</h2><p>{{ nutrients(weekly) }}</p>
+{% for row in custom %}<section><h3>{{ row.meal_name }}</h3><p>{{ row.portion }}</p>
+<p>{{ nutrients([row.kcal,row.protein_g,row.carbs_g,row.fat_g]) }} · Reviewed nutrition</p>
+<form method="post">{{ token() }}<input type="hidden" name="id" value="{{ row.id }}"><button class="btn btn-primary" name="action" value="delete_custom" data-confirm="Delete {{ row.meal_name }}? This cannot be undone." aria-label="Delete {{ row.meal_name }}">Delete meal</button></form></section>{% endfor %}
+{% endblock %}

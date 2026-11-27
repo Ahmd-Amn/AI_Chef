@@ -1,0 +1,16 @@
+<header class="site-header navbar">
+  <a class="brand navbar-brand" href="/" aria-label="AI Chef home">AI Chef</a>
+  <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="primaryNavigation" hidden>Menu</button>
+  <nav id="primaryNavigation" class="header-actions nav" aria-label="Main navigation">
+    <a href="/" {% if request.path == '/' and not request.args.get('library') %}aria-current="page"{% endif %}>Recipes</a>
+    {% if session.get('user_id') %}
+    <a href="/planner" {% if request.path == '/planner' %}aria-current="page"{% endif %}>Meal planner</a>
+    <a href="/tracker" {% if request.path == '/tracker' %}aria-current="page"{% endif %}>Food tracker</a>
+    {% endif %}
+    <a id="historyBtn" href="/?library=history" {% if request.args.get('library') == 'history' %}aria-current="page"{% endif %}>History</a>
+    <a id="favoritesBtn" href="/?library=favorites" {% if request.args.get('library') == 'favorites' %}aria-current="page"{% endif %}>Favorites</a>
+    <button type="button" id="authBtn">{{ 'Log out' if session.get('user_id') else 'Log in' }}</button>
+  </nav>
+</header>
+
+<script src="{{ url_for('static', filename='navigation.js') }}" defer></script>

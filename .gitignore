@@ -5,9 +5,7 @@ env/
 .venv/
 AI_Chef_Upgrade_Plan.md
 
-ai_chef.db
-ai_chef.db-*
 
-setup.md
-schema.sql
+
+
 

@@ -1,3 +1,4 @@
+import json
 import os
 import unittest
 from unittest.mock import patch
@@ -6,7 +7,7 @@ from google.genai.errors import ServerError
 
 os.environ['SECRET_KEY'] = 'test-only-secret'
 
-from app import app, db, init_db, query  # noqa: E402
+from app import app, db, init_db, query, recipe_view  # noqa: E402
 
 
 @unittest.skipUnless(
@@ -45,7 +46,7 @@ class AppTest(unittest.TestCase):
         self.csrf = self._token(self.client)
         with patch('app.genai.Client') as client:
             client.return_value.__enter__.return_value = client.return_value
-            client.return_value.models.generate_content.return_value.text = '# Good soup\n## Ingredients\n- carrots\n## Instructions\n1. Simmer.'
+            client.return_value.models.generate_content.return_value.text = json.dumps(dict(title='Rice', ingredients=['rice'], steps=['Cook.']))
             made = self._post('/api/recipe', {'ingredients': 'carrots'})
             self.assertEqual(client.return_value.models.generate_content.call_args.kwargs['model'], 'gemini-3.8-flash')
             client.return_value.__exit__.assert_called_once()
@@ -69,10 +70,10 @@ class AppTest(unittest.TestCase):
         self.assertEqual(self._post('/auth/login', {'email': 'missing@example.com', 'password': 'wrong'}).status_code, 401)
         with patch('app.genai.Client') as client:
             client.return_value.__enter__.return_value = client.return_value
-            client.return_value.models.generate_content.return_value.text = '# Rice\n## Instructions\n1. Cook.'
+            client.return_value.models.generate_content.return_value.text = json.dumps(dict(title='Rice', ingredients=['rice'], steps=['Cook.']))
             response = self._post('/api/recipe', {'ingredients': 'rice'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {'recipe': '# Rice\n## Instructions\n1. Cook.'})
+        self.assertEqual(response.json['steps'], ['Cook.'])
         self.assertEqual(self.client.get('/api/recipes').status_code, 401)
         self.assertEqual(self._post('/auth/register', {'email': 'c@example.com', 'password': 'long-password-c'}).status_code, 201)
         self.csrf = self._token(self.client)
@@ -86,7 +87,7 @@ class AppTest(unittest.TestCase):
         with patch('app.genai.Client') as client:
             client.return_value.__enter__.return_value = client.return_value
             generate = client.return_value.models.generate_content
-            generate.side_effect = [ServerError(503, {'error': {'message': 'busy'}}), type('Reply', (), {'text': '# Rice'})()]
+            generate.side_effect = [ServerError(503, {'error': {'message': 'busy'}}), type('Reply', (), {'text': json.dumps(dict(title='Rice', ingredients=['rice'], steps=['Cook.']))})()]
             response = self._post('/api/recipe', {'ingredients': 'rice'})
             self.assertEqual([call.kwargs['model'] for call in generate.call_args_list],
                              ['gemini-3.8-flash', 'gemini-3.5-flash-lite'])
@@ -94,6 +95,12 @@ class AppTest(unittest.TestCase):
 
 
 class DeploymentTest(unittest.TestCase):
+    def test_cooking_steps(self):
+        self.assertEqual(recipe_view('# Soup\n## Instructions\n1. Stir.')['steps'], ['Stir.'])
+        self.assertEqual(recipe_view('{"title":"Soup","ingredients":["water"],"steps":["Boil."]}')['steps'], ['Boil.'])
+        with self.assertRaises(ValueError):
+            recipe_view('{"title":"Soup","ingredients":["water"],"steps":[]}')
+
     def test_tidb_connection_uses_tls(self):
         settings = {'MYSQL_HOST': 'example.tidbcloud.com', 'MYSQL_PORT': '4000',
                     'MYSQL_USER': 'chef', 'MYSQL_PASSWORD': 'secret', 'MYSQL_DATABASE': 'ai_chef'}

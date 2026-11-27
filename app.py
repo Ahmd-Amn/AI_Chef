@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import secrets
@@ -56,6 +57,15 @@ def init_db():
         for statement in Path(__file__).with_name('schema.sql').read_text().split(';'):
             if statement.strip():
                 query(statement)
+        legacy = query("SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='food_logs'").fetchone()
+        if legacy['count']:
+            from planner import MEALS
+            rows = query('SELECT * FROM food_logs FOR UPDATE').fetchall()
+            for row in rows:
+                query('INSERT INTO custom_food_logs(user_id,eaten_on,meal_name,portion,kcal,protein_g,carbs_g,fat_g) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
+                      (row['user_id'], row['eaten_on'], MEALS.get(row['food_key'], (row['food_key'],))[0],
+                       f"{row['portion']} servings", row['kcal'], row['protein_g'], row['carbs_g'], row['fat_g']))
+                query('DELETE FROM food_logs WHERE id=%s', (row['id'],))
         db().commit()
 
 
@@ -133,6 +143,21 @@ def logout():
     return jsonify(ok=True)
 
 
+def recipe_view(raw):
+    if not raw.startswith('{'):
+        return dict(recipe=raw, steps=re.findall(r'^\s*\d+[.)]\s+(.+)$', raw, re.MULTILINE))
+    data = json.loads(raw)
+    title, ingredients, steps = data['title'], data['ingredients'], data['steps']
+    if not isinstance(title, str) or not title.strip() or not all(
+        isinstance(items, list) and items and all(isinstance(v, str) and v.strip() for v in items)
+        for items in (ingredients, steps)
+    ):
+        raise ValueError('Invalid recipe')
+    lines = [f'# {title}', '## Ingredients', *(f'- {v}' for v in ingredients),
+             '## Instructions', *(f'{i}. {v}' for i, v in enumerate(steps, 1))]
+    return dict(recipe='\n'.join(lines), steps=steps)
+
+
 @app.post('/api/recipe')
 @csrf_required
 def generate_recipe():
@@ -143,33 +168,32 @@ def generate_recipe():
     try:
         prompt = f'''You are an expert, friendly chef. I have these ingredients: {ingredients}.
 Suggest one recipe using these and a few basic pantry staples if needed.
-Return Markdown with this format:
-# Recipe Name
-*Brief Description*
-## Ingredients
-- ingredient
-## Instructions
-1. Step
+Return JSON with title (string), ingredients and steps (nonempty arrays of strings).
+Include cooking times and relevant safety instructions in the steps.
 '''
         with genai.Client() as client:
             try:
-                recipe = client.models.generate_content(model='gemini-3.8-flash', contents=prompt).text
+                recipe = client.models.generate_content(model='gemini-3.8-flash', contents=prompt, config={'response_mime_type': 'application/json'}).text
             except ServerError as error:
                 if error.code != 503:
                     raise
-                recipe = client.models.generate_content(model='gemini-3.5-flash-lite', contents=prompt).text
+                recipe = client.models.generate_content(model='gemini-3.5-flash-lite', contents=prompt, config={'response_mime_type': 'application/json'}).text
         if not recipe or not recipe.strip():
             raise ValueError('Empty recipe')
+        recipe = recipe.strip()
+        if not recipe.startswith('{'):
+            raise ValueError('Expected structured recipe')
+        data = recipe_view(recipe)
     except Exception:
         app.logger.exception('Recipe generation failed')
         return jsonify(error='Could not make a recipe right now. Please try again.'), 502
-    title = next((line.lstrip('# ').strip() for line in recipe.splitlines() if line.startswith('# ')), 'Untitled recipe')[:160]
+    title = next((line.lstrip('# ').strip() for line in data['recipe'].splitlines() if line.startswith('# ')), 'Untitled recipe')[:160]
     if 'user_id' not in session:
-        return jsonify(recipe=recipe)
+        return jsonify(data)
     cursor = query('INSERT INTO recipes(user_id, title, ingredients, recipe) VALUES (%s, %s, %s, %s)',
                    (session['user_id'], title, ingredients, recipe))
     db().commit()
-    return jsonify(id=cursor.lastrowid, recipe=recipe)
+    return jsonify(id=cursor.lastrowid, **data)
 
 
 @app.get('/api/recipes')
@@ -185,6 +209,8 @@ def recipes():
 def recipe_detail(recipe_id):
     row = query('SELECT * FROM recipes WHERE id = %s AND user_id = %s',
                 (recipe_id, session['user_id'])).fetchone()
+    if row:
+        row.update(recipe_view(row['recipe']))
     return jsonify(row) if row else (jsonify(error='Recipe not found.'), 404)
 
 
@@ -205,6 +231,12 @@ def favorites():
                  (session['user_id'],)).fetchall()
     return jsonify(recipes=rows)
 
+
+from planner import planner
+app.extensions["planner_db"] = (db, query)
+app.register_blueprint(planner)
+from tracker import tracker
+app.register_blueprint(tracker)
 
 if __name__ == '__main__':
     app.run(debug=True)

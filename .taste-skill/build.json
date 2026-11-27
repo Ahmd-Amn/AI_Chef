@@ -1,0 +1,11 @@
+{
+ "page": null,
+ "url": "http://localhost:5000/",
+ "root": null,
+ "kind": "software",
+ "category": "Cooking assistant",
+ "primary": "Get a recipe",
+ "rounds": 3,
+ "start": "2026-11-27T16:30:35.207Z",
+ "by": "gate.mjs --start"
+}
