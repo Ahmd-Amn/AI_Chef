@@ -1,4 +1,5 @@
 import json
+from feedback import AI_ERROR, SERVICE_ERROR
 import os
 import re
 import secrets
@@ -106,14 +107,14 @@ def register():
     email = str(data.get('email', '')).strip().lower()
     password = data.get('password', '')
     if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email) or len(email) > 254 or not isinstance(password, str) or len(password) < 12 or len(password) > 128:
-        return jsonify(error='Enter a valid email and a password of 12–128 characters.'), 400
+        return jsonify(error='Check your email and password.', fields={'email': 'Enter a valid email address.', 'password': 'Use 12–128 characters.'}), 400
     try:
         cursor = query('INSERT INTO users(email, password_hash) VALUES (%s, %s)',
                        (email, generate_password_hash(password)))
         db().commit()
     except pymysql.IntegrityError:
         db().rollback()
-        return jsonify(error='This email is already registered.'), 409
+        return jsonify(error='This email is already registered.', fields={'email': 'This email is already registered. Log in or use another email.'}), 409
     session.clear()
     session['user_id'] = cursor.lastrowid
     session['csrf_token'] = secrets.token_urlsafe(32)
@@ -128,7 +129,7 @@ def login():
     password = data.get('password', '')
     user = query('SELECT id, password_hash FROM users WHERE email = %s', (email,)).fetchone()
     if not user or not isinstance(password, str) or not check_password_hash(user['password_hash'], password):
-        return jsonify(error='Invalid email or password.'), 401
+        return jsonify(error='Invalid email or password.', fields={'email': 'Check your email.', 'password': 'Check your password.'}), 401
     session.clear()
     session['user_id'] = user['id']
     session['csrf_token'] = secrets.token_urlsafe(32)
@@ -163,10 +164,11 @@ def recipe_view(raw):
 def generate_recipe():
     ingredients = fields().get('ingredients', '')
     if not isinstance(ingredients, str) or not ingredients.strip() or len(ingredients) > 1000:
-        return jsonify(error='Enter ingredients (up to 1000 characters).'), 400
+        return jsonify(error='Check your ingredients.', fields={'ingredients': 'Enter ingredients, up to 1000 characters.'}), 400
     ingredients = ingredients.strip()
     try:
         prompt = f'''You are an expert, friendly chef. I have these ingredients: {ingredients}.
+Ingredients are provided one per line, or as a comma-separated list.
 Suggest one recipe using these and a few basic pantry staples if needed.
 Return JSON with title (string), ingredients and steps (nonempty arrays of strings).
 Include cooking times and relevant safety instructions in the steps.
@@ -186,7 +188,7 @@ Include cooking times and relevant safety instructions in the steps.
         data = recipe_view(recipe)
     except Exception:
         app.logger.exception('Recipe generation failed')
-        return jsonify(error='Could not make a recipe right now. Please try again.'), 502
+        return jsonify(error=AI_ERROR, retry_after=60), 502
     title = next((line.lstrip('# ').strip() for line in data['recipe'].splitlines() if line.startswith('# ')), 'Untitled recipe')[:160]
     if 'user_id' not in session:
         return jsonify(data)
@@ -230,6 +232,15 @@ def favorites():
     rows = query('SELECT id, title, ingredients, favorite, created_at FROM recipes WHERE user_id = %s AND favorite = 1 ORDER BY id DESC',
                  (session['user_id'],)).fetchall()
     return jsonify(recipes=rows)
+
+
+@app.errorhandler(500)
+@app.errorhandler(pymysql.MySQLError)
+def service_unavailable(error):
+    app.logger.error('Service request failed', exc_info=True)
+    if request.path.startswith(('/api/', '/auth/')):
+        return jsonify(error=SERVICE_ERROR), 503
+    return render_template('service_error.html', message=SERVICE_ERROR), 503
 
 
 from planner import planner

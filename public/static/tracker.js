@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
         button.textContent = 'Estimating nutrition…';
         form.setAttribute('aria-busy', 'true');
         status.textContent = 'Estimating your meal. Please wait.';
+        status.classList.add('skeleton');
+        for (let i=0; i<3; i++) status.append(document.createElement('span'));
     });
     window.addEventListener('pageshow', () => {
         form.removeAttribute('aria-busy');
@@ -23,5 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
         button.textContent = 'Estimate nutrition';
         form.querySelectorAll('input[name="action"]').forEach(input => input.remove());
         status.textContent = '';
+        status.classList.remove('skeleton');
     });
 });

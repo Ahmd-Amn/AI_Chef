@@ -1,0 +1,6 @@
+{% extends "workspace.html" %}
+{% block title %}Service unavailable{% endblock %}
+{% block heading %}Service unavailable{% endblock %}
+{% block description %}{{ message }}{% endblock %}
+{% block image %}2{% endblock %}
+{% block content %}<p role="alert">{{ message }}</p><button type="button" onclick="location.reload()">Try again</button>{% endblock %}

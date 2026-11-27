@@ -5,6 +5,7 @@ from itertools import product
 
 from flask import Blueprint, abort, redirect, render_template, request, session, url_for
 from google import genai
+from feedback import AI_ERROR, form_errors
 
 planner = Blueprint('planner', __name__)
 
@@ -70,6 +71,8 @@ def page():
             abort(403)
         action = request.form.get('action')
         if action == 'generate':
+            if form_errors():
+                abort(400, description='Please correct the highlighted fields.')
             settings = request.form.to_dict()
             session['planner_settings'] = settings
             days = request.form.get('days')
@@ -112,7 +115,7 @@ def page():
                             options.sort(key=lambda key: ranking.index(key) if key in ranking else len(ranking))
                         ids = assemble_plan(choices, int(days), goal, calories)
                     except Exception:
-                        error = 'Your plan is ready. Extra preferences could not be applied this time.'
+                        error = AI_ERROR + ' Your basic plan is ready; extra preferences were not applied.'
                 draft = dict(ids=ids, slots=slots, exclude=excluded, goal=goal, calories=calories,
                              current_weight=current_weight, target_weight=target_weight, settings=settings)
         elif action == 'swap' and draft:
@@ -158,4 +161,4 @@ def page():
 @planner.errorhandler(400)
 def invalid_plan(error):
     return render_template('planner.html', draft=session.get('meal_draft'), saved=[], meals=MEALS,
-                           settings=request.form, error=error.description), 400
+                           settings=request.form, error=error.description, field_errors=form_errors()), 400

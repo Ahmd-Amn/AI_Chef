@@ -4,6 +4,7 @@
 {% block description %}Log your meals and review your daily nutrition.{% endblock %}
 {% block image %}3{% endblock %}
 {% block content %}
+{% if field_errors %}<script type="application/json" id="fieldErrors">{{ field_errors|tojson }}</script>{% endif %}
 {% if error %}<p role="alert">{{ error }}</p>{% endif %}
 {% macro token() %}<input type="hidden" name="token" value="{{ session.csrf_token }}"><input type="hidden" name="date" value="{{ selected }}">{% endmacro %}
 {% macro nutrients(values) %}{{ values[0] }} kcal · Protein {{ values[1] }} g · Carbs {{ values[2] }} g · Fat {{ values[3] }} g{% endmacro %}

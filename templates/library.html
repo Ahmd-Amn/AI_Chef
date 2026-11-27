@@ -3,9 +3,11 @@
   <p id="libraryStatus" role="status"></p>
   <div id="recipeList"></div>
   <section id="libraryDetail" hidden>
-    <button id="libraryBack" type="button">Back to list</button>
-    <button id="libraryFavorite" type="button">Add to favorites</button>
+    <button id="libraryBack" type="button" aria-label="Back to recipe list"><span aria-hidden="true">←</span> Back</button>
+    <div class="recipe-actions">
+    <button id="libraryFavorite" type="button" aria-pressed="false">Add to favorites</button>
     <button id="libraryCooking" type="button">Start cooking</button>
+    </div>
     <div id="libraryRecipe"></div>
   </section>
 </dialog>

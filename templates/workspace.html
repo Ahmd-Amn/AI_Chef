@@ -11,12 +11,14 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.9/dist/css/bootstrap.min.css" integrity="sha384-yEPZ7jP9S0QKiUQ0m3jjsO4ProIW7wvR9gXkI7JOGa2XVsw53Yke2bsdkBbjmmiX" crossorigin="anonymous">
 <link rel="stylesheet" href="{{ url_for('static', filename='tailwind.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="{{ url_for('static', filename='feedback.js') }}" defer></script>
 </head>
 <body class="workspace {% if request.path=='/planner' %}planner-page{% elif request.path=='/tracker' %}tracker-page{% endif %}">
 <a class="skip-link" href="#main">Skip to content</a>
 <div class="page-shell">
 {% include 'navigation.html' %}
 <main id="main">
+<div class="page-skeleton skeleton" aria-hidden="true" hidden><span></span><span></span><span></span></div>
 <div class="workspace-hero" data-enter><div><p class="eyebrow">Your everyday kitchen</p><h1>{% block heading %}{% endblock %}</h1><p>{% block description %}{% endblock %}</p></div>
 <div class="workspace-photo"><img src="{{ url_for('static', filename='images/') }}{% block image %}{% endblock %}.webp" alt="" fetchpriority="high"></div></div>
 <div class="workspace-content">{% block content %}{% endblock %}</div>
@@ -31,7 +33,7 @@ document.addEventListener('click', event => {
 });
 document.getElementById('authBtn').onclick = async () => {
     try {
-        const response = await fetch('/auth/logout', {method:'POST', headers:{'X-CSRF-Token': {{ session.csrf_token|tojson }}}});
+        const response = await fetch('/auth/logout', {method:'POST', headers:{'X-CSRF-Token': {{ session.get('csrf_token', '')|tojson }}}});
         if (!response.ok) throw new Error('Could not log out. Please try again.');
         location.href = '/';
     } catch (error) { alert(error.message); }

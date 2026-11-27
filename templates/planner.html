@@ -4,6 +4,7 @@
 {% block description %}Plan a day or a week of meals around your goals and ingredients.{% endblock %}
 {% block image %}6{% endblock %}
 {% block content %}
+{% if field_errors %}<script type="application/json" id="fieldErrors">{{ field_errors|tojson }}</script>{% endif %}
 {% macro token() %}<input type="hidden" name="token" value="{{ session.csrf_token }}">{% endmacro %}
 {% if error %}<p role="alert">{{ error }}</p>{% endif %}
 <form method="post" class="shadow-sm rounded-xl recipe-form planner-form">{{ token() }}

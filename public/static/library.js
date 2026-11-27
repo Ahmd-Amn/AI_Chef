@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = document.getElementById('libraryStatus');
 
     async function get(path) {
-        const response = await fetch(path);
-        if (!response.ok) throw new Error(response.status === 401 ? 'Please log in to view your recipes.' : 'Could not load recipes. Please try again.');
+        const response = await fetch(path).catch(() => { throw new Error('No services are available right now. Please try again later.'); });
+        if (!response.ok) throw new Error(response.status === 401 ? 'Please log in to view your recipes.' : 'No services are available right now. Please try again later.');
         return response.json();
     }
 
@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         list.hidden = false;
         list.replaceChildren();
         status.textContent = 'Loading recipes…';
+        status.classList.add('circle-loading');
         dialog.showModal();
         try {
             const data = await get(favorites ? '/api/favorites' : '/api/recipes');
@@ -39,11 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.onclick = async () => {
                     button.disabled = true;
                     status.textContent = 'Loading recipe…';
+                    status.classList.add('circle-loading');
                     try {
                         const selected = await get(`/api/recipes/${recipe.id}`);
                         status.textContent = '';
                         if (!window.marked || !window.DOMPurify) throw new Error('Recipe viewer could not load. Please refresh and try again.');
                         current = selected;
+                        document.getElementById('libraryFavorite').setAttribute('aria-pressed', String(Boolean(selected.favorite)));
                         list.hidden = true;
                         detail.hidden = false;
                         document.getElementById('libraryRecipe').innerHTML = DOMPurify.sanitize(marked.parse(selected.recipe));
@@ -53,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (error) {
                         status.textContent = error.message;
                     } finally {
+                        status.classList.remove('circle-loading');
                         button.disabled = false;
                     }
                 };
@@ -60,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             status.textContent = error.message;
-        }
+        } finally { status.classList.remove('circle-loading'); }
     }
 
     document.getElementById('libraryCooking').onclick = () => {
@@ -76,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!response.ok) throw new Error('Could not update favorite. Please try again.');
             current.favorite = !current.favorite;
+            button.setAttribute('aria-pressed', String(current.favorite));
             button.textContent = current.favorite ? 'Remove from favorites' : 'Add to favorites';
         } catch (error) { status.textContent = error.message; }
         finally { button.disabled = false; }

@@ -6,15 +6,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let registering = false;
 
     async function api(path, options = {}) {
-        const response = await fetch(path, {
+        let response;
+        try { response = await fetch(path, {
             ...options,
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf, ...options.headers }
-        });
+        }); } catch { throw new Error('No services are available right now. Please try again later.'); }
         if (!response.headers.get('content-type')?.includes('application/json')) {
-            throw new Error('Could not complete the request. Please try again.');
+            throw new Error('No services are available right now. Please try again later.');
         }
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Something went wrong.');
+        if (!response.ok) {
+            if (data.fields) window.showFieldErrors(data.fields);
+            throw new Error(response.status >= 500 && !data.retry_after ? 'No services are available right now. Please try again later.' : data.error || 'Please check your entries.');
+        }
         return data;
     }
 
@@ -24,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rendered = DOMPurify.sanitize(marked.parse(data.recipe));
         currentRecipe = data;
         $('recipeContent').innerHTML = rendered;
+        $('favoriteBtn').setAttribute('aria-pressed', String(Boolean(data.favorite)));
         $('favoriteBtn').textContent = data.favorite ? 'Remove from favorites' : 'Add to favorites';
         $('favoriteBtn').hidden = !loggedIn || !data.id;
         $('previewArt').classList.add('hidden');
@@ -66,7 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     $('authForm').addEventListener('submit', async (event) => {
         event.preventDefault();
+        if ($('authSubmit').disabled) return;
         $('authError').textContent = '';
+        $('authSubmit').disabled = true;
+        $('authSwitch').disabled = true;
+        $('authSubmit').classList.add('circle-loading');
+        $('authSubmit').textContent = registering ? 'Creating… wait a moment' : 'Logging in…';
         try {
             const data = await api(registering ? '/auth/register' : '/auth/login', {
                 method: 'POST', body: JSON.stringify({ email: $('email').value, password: $('password').value })
@@ -74,6 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
             csrf = data.csrf_token;
             location.reload();
         } catch (error) { $('authError').textContent = error.message; }
+        finally {
+            $('authSubmit').disabled = false;
+            $('authSwitch').disabled = false;
+            $('authSubmit').classList.remove('circle-loading');
+            $('authSubmit').textContent = registering ? 'Create account' : 'Log in';
+        }
     });
 
     $('recipeForm').addEventListener('submit', async (event) => {
@@ -103,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const favorite = !currentRecipe.favorite;
             await api(`/api/recipes/${currentRecipe.id}/favorite`, { method: favorite ? 'POST' : 'DELETE' });
             currentRecipe.favorite = favorite;
+            $('favoriteBtn').setAttribute('aria-pressed', String(favorite));
             $('favoriteBtn').textContent = favorite ? 'Remove from favorites' : 'Add to favorites';
         } catch (error) { alert(error.message); }
     });

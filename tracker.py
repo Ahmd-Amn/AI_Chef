@@ -6,6 +6,7 @@ import secrets
 from flask import Blueprint, abort, current_app, redirect, render_template, request, session, url_for
 
 from google import genai
+from feedback import AI_ERROR, form_errors
 
 tracker = Blueprint('tracker', __name__)
 
@@ -32,6 +33,8 @@ def page():
         ):
             abort(403)
         action = request.form.get('action')
+        if action in ('estimate', 'save_custom') and form_errors():
+            abort(400, description='Please correct the highlighted fields.')
         if action == 'estimate':
             name = request.form.get('meal_name', '').strip()
             portion = request.form.get('meal_portion', '').strip()
@@ -55,7 +58,7 @@ def page():
                     raise ValueError()
                 preview = dict(name=name, portion=assumed, values=values)
             except Exception:
-                error = 'Could not estimate this meal. Check your portions and try again.'
+                error = AI_ERROR
         elif action == 'save_custom':
             name = request.form.get('meal_name', '').strip()
             portion = request.form.get('meal_portion', '').strip()
@@ -82,3 +85,14 @@ def page():
     daily_custom = [row for row in custom if str(row['eaten_on']) == selected.isoformat()]
     return render_template('tracker.html', selected=selected,
                            daily=totals(daily_custom), weekly=totals(custom), preview=preview, custom=daily_custom, error=error), (502 if error else 200)
+
+
+@tracker.errorhandler(400)
+def invalid_food(error):
+    return render_template('tracker.html', selected=request.values.get('date', date.today().isoformat()),
+                           daily=[0]*4, weekly=[0]*4,
+                           preview=dict(name=request.form.get('meal_name', ''),
+                                        portion=request.form.get('meal_portion', ''),
+                                        values=[request.form.get(key, '') for key in ('kcal', 'protein_g', 'carbs_g', 'fat_g')])
+                           if request.form.get('action') == 'save_custom' else None, custom=[],
+                           error=error.description, field_errors=form_errors()), 400

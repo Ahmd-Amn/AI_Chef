@@ -18,12 +18,15 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js" defer></script>
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+<script src="{{ url_for('static', filename='feedback.js') }}" defer></script>
+<script src="{{ url_for('static', filename='ingredients.js') }}" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to recipe maker</a>
   <div class="page-shell">
     {% include 'navigation.html' %}
     <main id="main">
+<div class="page-skeleton skeleton" aria-hidden="true" hidden><span></span><span></span><span></span></div>
       <section class="hero" aria-labelledby="hero-title" data-enter>
         <div class="hero-copy">
           <p class="eyebrow">AI Chef</p>
@@ -31,20 +34,23 @@
           <p class="intro">Find a recipe, plan your meals, and keep track of what you eat. Sign in to save your cooking history.</p>
           <form id="recipeForm" class="recipe-form">
             <label for="ingredients">What’s on your counter?</label>
-            <textarea id="ingredients" placeholder="Chicken, rice, broccoli, garlic…" rows="4" required></textarea>
-            <div class="form-bottom"><span>List your ingredients, separated by commas</span><button id="generateBtn" type="submit">Get a recipe <span aria-hidden="true"></span></button></div>
+            <div class="ingredient-editor">
+              <div id="ingredientNumbers" class="ingredient-numbers" aria-hidden="true">1.</div>
+              <textarea id="ingredients" name="ingredients" aria-keyshortcuts="Shift+Enter" maxlength="1000" placeholder="Chicken&#10;Rice&#10;Broccoli&#10;Garlic" rows="4" wrap="off" aria-describedby="ingredientHelp" required></textarea>
+            </div>
+            <div class="form-bottom"><span id="ingredientHelp">Enter one ingredient per line. Press Enter to add the next. <span class="desktop-shortcut">Shift + Enter to get a recipe.</span></span><button id="generateBtn" type="submit">Get a recipe <span aria-hidden="true"></span></button></div>
           </form>
         </div>
         <div class="recipe-preview" id="recipePreview">
           <div id="previewArt" class="hero-photo"><img src="{{ url_for('static', filename='images/5.webp') }}" alt="Prepared dishes with fresh vegetables and herbs" fetchpriority="high"></div>
-          <section id="recipeContainer" class="result hidden" aria-labelledby="result-title"><div class="result-heading"><p class="eyebrow">Made for your kitchen</p><h2 id="result-title">Your recipe</h2><button id="favoriteBtn" type="button">Add to favorites</button></div><button id="startCooking">Start cooking</button><div id="recipeContent"></div></section>
+          <section id="recipeContainer" class="result hidden" aria-labelledby="result-title"><div class="result-heading"><p class="eyebrow">Made for your kitchen</p><h2 id="result-title">Your recipe</h2></div><div class="recipe-actions"><button id="startCooking" type="button">Start cooking</button><button id="favoriteBtn" type="button" aria-pressed="false">Add to favorites</button></div><div id="recipeContent"></div></section>
         </div>
       </section>
-      <section id="loading" class="status hidden" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span> Making your recipe…</section>
+      <section id="loading" class="status hidden" role="status" aria-live="polite"><span>Making your recipe…</span><div class="skeleton" aria-hidden="true"><span></span><span></span><span></span></div></section>
       <section id="errorContainer" class="error-panel hidden" role="alert"><p id="errorContent"></p></section>
       {% include 'cooking.html' %}
       {% include 'library.html' %}
-      <dialog id="authPanel" class="auth-panel" aria-labelledby="authTitle"><button id="authClose" class="auth-close" type="button" aria-label="Close">×</button><h2 id="authTitle">Log in</h2><p id="authIntro">Keep your recipes and favorites in one place.</p><form id="authForm"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required><label for="password">Password</label><div class="password-field"><input id="password" type="password" minlength="12" autocomplete="current-password" required><button id="showPassword" type="button" aria-label="Show password" aria-pressed="false">Show</button></div><p id="authError" role="alert"></p><button id="authSubmit" type="submit">Log in</button></form><button id="authSwitch" type="button">Create an account</button></dialog>
+      <dialog id="authPanel" class="auth-panel" aria-labelledby="authTitle"><button id="authClose" class="auth-close" type="button" aria-label="Close">×</button><h2 id="authTitle">Log in</h2><p id="authIntro">Keep your recipes and favorites in one place.</p><form id="authForm"><label for="email">Email</label><input id="email" name="email" type="email" maxlength="254" autocomplete="email" required><label for="password">Password</label><div class="password-field"><input id="password" name="password" type="password" minlength="12" maxlength="128" autocomplete="current-password" required><button id="showPassword" type="button" aria-label="Show password" aria-pressed="false">Show</button></div><p id="authError" role="alert"></p><button id="authSubmit" type="submit">Log in</button></form><button id="authSwitch" type="button">Create an account</button></dialog>
     </main>
     <footer>AI CHEF <span>Good taste begins with what you have.</span></footer>
   </div>
