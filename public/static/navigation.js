@@ -29,6 +29,30 @@ document.addEventListener('DOMContentLoaded', () => {
             toggle.focus();
         }
     });
+    const pending = document.createElement('div');
+    pending.className = 'navigation-loading';
+    pending.setAttribute('role', 'status');
+    pending.hidden = true;
+    document.body.append(pending);
+    let slowNotice;
+    document.addEventListener('click', event => {
+        const link = event.target.closest('a[href]');
+        if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey ||
+            event.shiftKey || event.altKey || link.target || link.hasAttribute('download')) return;
+        const destination = new URL(link.href, location.href);
+        if (destination.origin !== location.origin || destination.href === location.href ||
+            (destination.pathname === location.pathname && destination.search === location.search)) return;
+        pending.textContent = 'Loading page…';
+        pending.hidden = false;
+        clearTimeout(slowNotice);
+        slowNotice = setTimeout(() => {
+            pending.textContent = 'Still loading. Please wait, or use your browser’s reload button to retry.';
+        }, 12000);
+    });
+    window.addEventListener('pageshow', () => {
+        pending.hidden = true;
+        clearTimeout(slowNotice);
+    });
     compact.addEventListener('change', updateLayout);
     updateLayout();
 });

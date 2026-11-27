@@ -36,12 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const errors = document.getElementById('fieldErrors');
     if (errors) window.showFieldErrors(JSON.parse(errors.textContent));
 
-    const pageSkeleton = document.querySelector('.page-skeleton');
-    if (pageSkeleton && document.readyState !== 'complete') {
-        pageSkeleton.hidden = false;
-        window.addEventListener('load', () => { pageSkeleton.hidden = true; }, {once:true});
-        setTimeout(() => { pageSkeleton.hidden = true; }, 4000);
-    }
     for (const form of document.querySelectorAll('.planner-form, .estimate-review, .date-filter')) {
         form.addEventListener('submit', event => {
             if (form.dataset.pending) { event.preventDefault(); return; }

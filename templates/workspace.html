@@ -18,7 +18,6 @@
 <div class="page-shell">
 {% include 'navigation.html' %}
 <main id="main">
-<div class="page-skeleton skeleton" aria-hidden="true" hidden><span></span><span></span><span></span></div>
 <div class="workspace-hero" data-enter><div><p class="eyebrow">Your everyday kitchen</p><h1>{% block heading %}{% endblock %}</h1><p>{% block description %}{% endblock %}</p></div>
 <div class="workspace-photo"><img src="{{ url_for('static', filename='images/') }}{% block image %}{% endblock %}.webp" alt="" fetchpriority="high"></div></div>
 <div class="workspace-content">{% block content %}{% endblock %}</div>
