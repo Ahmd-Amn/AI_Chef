@@ -1,4 +1,36 @@
 document.addEventListener('DOMContentLoaded', () => {
+    window.showRemoved = () => {
+        const x = window.scrollX, y = window.scrollY;
+        document.getElementById('removedPopup').showModal();
+        window.scrollTo({left:x, top:y, behavior:'instant'});
+    };
+    document.addEventListener('submit', event => {
+        if (!['delete', 'delete_custom'].includes(event.submitter?.value)) return;
+        try {
+            sessionStorage.setItem('removalPosition', JSON.stringify({path:location.pathname, x:window.scrollX, y:window.scrollY}));
+        } catch {}
+    });
+    if (document.getElementById('removedPopup')?.hasAttribute('data-removed')) {
+        window.addEventListener('load', () => {
+            window.showRemoved();
+            try {
+                const position = JSON.parse(sessionStorage.getItem('removalPosition'));
+                sessionStorage.removeItem('removalPosition');
+                if (position?.path === location.pathname) {
+                    window.scrollTo({left:position.x, top:position.y, behavior:'instant'});
+                }
+            } catch {}
+        }, {once:true});
+    }
+    window.focusSubmissionError = element => {
+        if (!element) return;
+        if (element.tabIndex < 0 && !element.hasAttribute('tabindex')) element.setAttribute('tabindex', '-1');
+        element.focus({preventScroll:true});
+        element.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+            block:'center'
+        });
+    };
     window.showFieldErrors = errors => {
         let first;
         for (const [name, message] of Object.entries(errors)) {
@@ -20,12 +52,17 @@ document.addEventListener('DOMContentLoaded', () => {
             field.closest('details')?.setAttribute('open', '');
             first ||= field;
         }
-        first?.focus();
+        window.focusSubmissionError(first);
     };
     document.addEventListener('invalid', event => {
         const field = event.target;
         const name = field.name || field.id;
-        if (name) window.showFieldErrors({[name]: field.validationMessage});
+        if (name) {
+            const message = document.documentElement.lang === 'ms'
+                ? (field.validity.valueMissing ? 'Sila isi ruangan ini.' : 'Sila semak format atau nilai dalam ruangan ini.')
+                : field.validationMessage;
+            window.showFieldErrors({[name]: message});
+        }
     }, true);
     document.addEventListener('input', event => {
         const field = event.target;
@@ -35,8 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     const errors = document.getElementById('fieldErrors');
     if (errors) window.showFieldErrors(JSON.parse(errors.textContent));
+    else {
+        const message = document.querySelector('[role="alert"]');
+        if (message?.textContent.trim()) window.focusSubmissionError(message);
+    }
 
-    for (const form of document.querySelectorAll('.planner-form, .estimate-review, .date-filter')) {
+    for (const form of document.querySelectorAll('.estimate-review, .date-filter')) {
         form.addEventListener('submit', event => {
             if (form.dataset.pending) { event.preventDefault(); return; }
             form.dataset.pending = 'true';

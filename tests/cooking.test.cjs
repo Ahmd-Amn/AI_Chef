@@ -15,7 +15,7 @@ function element(id) {
 }
 vm.runInNewContext(fs.readFileSync('public/static/cooking.js', 'utf8'), {
     document:{getElementById:element, addEventListener(name, callback){handlers[name]=callback}},
-    Date:{now:()=>now}, confirm:()=>allow,
+    window:{}, Date:{now:()=>now}, confirm:()=>allow,
     setInterval(callback){tick=callback;return 1}, clearInterval(){}
 });
 handlers.DOMContentLoaded();

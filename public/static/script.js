@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const $ = (id) => document.getElementById(id);
     let csrf = document.querySelector('meta[name="csrf-token"]').content;
-    let loggedIn = $('authBtn').textContent.includes('Log out');
+    let loggedIn = $('authBtn').dataset.loggedIn === 'true';
     let currentRecipe = null;
     let registering = false;
 
@@ -83,7 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             csrf = data.csrf_token;
             location.reload();
-        } catch (error) { $('authError').textContent = error.message; }
+        } catch (error) {
+            $('authError').textContent = error.message;
+            window.focusSubmissionError($('authError'));
+        }
         finally {
             $('authSubmit').disabled = false;
             $('authSwitch').disabled = false;
@@ -105,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             $('errorContent').textContent = error.message;
             $('errorContainer').classList.remove('hidden');
+            window.focusSubmissionError($('errorContainer'));
         } finally {
             $('loading').classList.add('hidden');
             $('generateBtn').disabled = false;
@@ -121,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRecipe.favorite = favorite;
             $('favoriteBtn').setAttribute('aria-pressed', String(favorite));
             $('favoriteBtn').textContent = favorite ? 'Remove from favorites' : 'Add to favorites';
+            if (!favorite) window.showRemoved();
         } catch (error) { alert(error.message); }
     });
 

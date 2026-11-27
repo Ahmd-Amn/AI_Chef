@@ -1,6 +1,6 @@
-# AI Chef
+# Personal AI Cooking & Meal-Planning Assistant
 
-AI Chef is a web application for finding recipes, following cooking instructions, planning meals, and tracking estimated nutrition. It helps home cooks turn available ingredients into meals and keep their cooking and food records in one place.
+Personal AI Cooking & Meal-Planning Assistant is a web application for finding recipes, following cooking instructions, planning meals, and tracking estimated nutrition. It helps home cooks turn available ingredients into meals and keep their cooking and food records in one place.
 
 ## What you can do
 
@@ -26,7 +26,7 @@ Signed-in users can create a one-day or seven-day plan with breakfast, lunch, di
 - Exclude ingredients and add cuisine, budget, or pantry preferences.
 - Swap meals, review estimated daily nutrition, and save plans for later.
 
-The planner selects from a small collection of plant-based recipes. Basic plans are assembled locally, while AI helps rank recipes for optional preferences. Calorie targets select the closest available menu. Ingredient exclusions use English-name matching and selected aliases.
+The planner selects from a small collection of plant-based recipes. Basic plans are assembled locally, while AI helps rank recipes for optional preferences. Calorie targets select the closest available menu. Exclusions can be entered one per line in a preferred language. AI translates unfamiliar names before ingredient matching; translated exclusions also apply to meal swaps.
 
 ### Track meals and estimated nutrition
 
@@ -36,7 +36,7 @@ Users can correct the portions and nutrition values before confirming a log, vie
 
 ## How it works
 
-AI Chef uses Python and Flask for its backend, Jinja templates for its pages, and JavaScript for recipe popups, guided cooking, and mobile navigation. Bootstrap, Tailwind CSS utilities, and shared custom styles support the interface.
+Personal AI Cooking & Meal-Planning Assistant uses Python and Flask for its backend, Jinja templates for its pages, and JavaScript for recipe popups, guided cooking, and mobile navigation. Bootstrap, Tailwind CSS utilities, and shared custom styles support the interface.
 
 Google Gemini generates recipes and meal nutrition estimates. TiDB, accessed through a MySQL-compatible connection, stores accounts, recipe history, favorites, meal plans, and food logs.
 

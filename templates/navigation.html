@@ -1,5 +1,5 @@
 <header class="site-header navbar">
-  <a class="brand navbar-brand" href="/" aria-label="AI Chef home">AI Chef</a>
+  <a class="brand navbar-brand" href="/" translate="no">AI Chef<img class="brand-logo" src="{{ url_for('static', filename='images/ai-chef-logo.svg') }}" width="40" height="40" alt=""></a>
   <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="primaryNavigation" hidden>Menu</button>
   <nav id="primaryNavigation" class="header-actions nav" aria-label="Main navigation">
     <a href="/" {% if request.path == '/' and not request.args.get('library') %}aria-current="page"{% endif %}>Recipes</a>
@@ -9,8 +9,21 @@
     {% endif %}
     <a id="historyBtn" href="/?library=history" {% if request.args.get('library') == 'history' %}aria-current="page"{% endif %}>History</a>
     <a id="favoritesBtn" href="/?library=favorites" {% if request.args.get('library') == 'favorites' %}aria-current="page"{% endif %}>Favorites</a>
-    <button type="button" id="authBtn">{{ 'Log out' if session.get('user_id') else 'Log in' }}</button>
+    <button type="button" id="authBtn" data-logged-in="{{ 'true' if session.get('user_id') else 'false' }}">{{ 'Log out' if session.get('user_id') else 'Log in' }}</button>
+    <div class="language-picker">
+      <label for="language" class="language-label">Language</label>
+      <select id="language" aria-label="Language"><option value="en">English</option><option value="ms">Bahasa Melayu</option></select>
+      <fieldset id="languageOptions" class="language-segments" hidden>
+        <legend class="visually-hidden">Language</legend>
+        <label><input type="radio" name="ui-language" value="en"><span lang="en">English</span></label>
+        <label><input type="radio" name="ui-language" value="ms"><span lang="ms">Melayu</span></label>
+      </fieldset>
+    </div>
   </nav>
 </header>
+<dialog id="removedPopup" class="saved-popup" aria-labelledby="removedTitle"{% if get_flashed_messages(category_filter=['removed']) %} data-removed{% endif %}>
+  <h2 id="removedTitle">Removed</h2>
+  <form method="dialog"><button type="submit">Close</button></form>
+</dialog>
 
 <script src="{{ url_for('static', filename='navigation.js') }}" defer></script>

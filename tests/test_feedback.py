@@ -27,7 +27,7 @@ class FeedbackTest(unittest.TestCase):
                 response = client.post('/tracker', data=dict(action='estimate', token='test', meal_name='rice'))
             self.assertEqual(response.status_code, 502)
             self.assertIn(AI_ERROR.encode(), response.data)
-            self.assertIn(b'value="rice"', response.data)
+            self.assertIn(b'>rice</textarea>', response.data)
 
     def test_database_error_is_service_message(self):
         client = app.test_client()
@@ -37,3 +37,30 @@ class FeedbackTest(unittest.TestCase):
             response = client.get('/api/recipes')
         self.assertEqual(response.status_code, 503)
         self.assertIn('No services', response.json['error'])
+
+    def test_recipe_and_tracker_rate_limit_messages(self):
+        from google.genai.errors import ClientError
+        from feedback import AI_RATE_ERROR
+        client = app.test_client()
+        with client.session_transaction() as state:
+            state['csrf_token']='token'
+        with patch('app.genai.Client') as ai:
+            generate=ai.return_value.__enter__.return_value.models.generate_content
+            generate.side_effect=ClientError(429,{'error':{'message':'quota'}})
+            response=client.post('/api/recipe',json={'ingredients':'rice'},headers={'X-CSRF-Token':'token'})
+            self.assertEqual(response.status_code,429)
+            self.assertEqual(response.json['error'],AI_RATE_ERROR)
+            self.assertNotIn('retry_after',response.json)
+            self.assertEqual(generate.call_count,2)
+        with client.session_transaction() as state:
+            state['user_id']=1
+        query=Mock()
+        query.return_value.fetchall.return_value=[]
+        with patch.dict(app.extensions,planner_db=(Mock(),query)),patch('tracker.genai.Client') as ai:
+            generate=ai.return_value.__enter__.return_value.models.generate_content
+            generate.side_effect=ClientError(429,{'error':{'message':'quota'}})
+            response=client.post('/tracker',data=dict(action='estimate',token='token',meal_name='air milo'))
+            self.assertEqual(response.status_code,429)
+            self.assertIn(AI_RATE_ERROR.encode(),response.data)
+            self.assertIn(b'>air milo</textarea>',response.data)
+            self.assertEqual(generate.call_count,2)

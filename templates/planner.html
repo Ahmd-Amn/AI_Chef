@@ -4,40 +4,55 @@
 {% block description %}Plan a day or a week of meals around your goals and ingredients.{% endblock %}
 {% block image %}6{% endblock %}
 {% block content %}
+{% for saved_id in get_flashed_messages(category_filter=['planner_saved']) %}
+<dialog id="planSavedPopup" class="saved-popup" aria-labelledby="planSavedTitle" data-saved-plan="saved-plan-{{ saved_id }}">
+  <h2 id="planSavedTitle">Saved</h2>
+  <form method="dialog"><button type="submit">Close</button></form>
+</dialog>
+{% endfor %}
+<dialog id="planningPopup" class="calculating-popup" aria-labelledby="planningTitle">
+<span class="calculating-spinner" aria-hidden="true"></span>
+<p id="planningTitle" role="status" aria-live="polite">Planning…</p>
+</dialog>
+<script src="{{ url_for('static', filename='planner.js') }}" defer></script>
 {% if field_errors %}<script type="application/json" id="fieldErrors">{{ field_errors|tojson }}</script>{% endif %}
 {% macro token() %}<input type="hidden" name="token" value="{{ session.csrf_token }}">{% endmacro %}
 {% if error %}<p role="alert">{{ error }}</p>{% endif %}
 <form method="post" class="shadow-sm rounded-xl recipe-form planner-form">{{ token() }}
 <div class="form-heading"><h2>Build your meal plan</h2><p>Choose your schedule and dietary preferences.</p></div>
 <label>Duration <select class="form-select" name="days"><option value="1" {% if settings.get("days", "1")=="1" %}selected{% endif %}>One day</option><option value="7" {% if settings.get("days")=="7" %}selected{% endif %}>Seven days</option></select></label>
-<label>Goal <select class="form-select" name="goal" id="goal">{% for g in ['Maintain weight','Fat loss','Muscle gain'] %}<option {% if settings.get("goal")==g %}selected{% endif %}>{{ g }}</option>{% endfor %}</select></label>
+<label>Goal <select class="form-select" name="goal" id="goal">{% for g in ['Maintain weight','Fat loss','Muscle gain'] %}<option value="{{ g }}" {% if settings.get("goal")==g %}selected{% endif %}>{{ g }}</option>{% endfor %}</select></label>
 <fieldset id="weightFields"><legend>Your weight goal</legend><p class="field-hint">Enter both weights in kilograms. Your target should be below your current weight.</p>
 <label>Current weight (kg)<input class="form-control" name="current_weight" value="{{ settings.get('current_weight', '') }}" type="number" min="0.1" max="1000" step="any"></label>
 <label>Target weight (kg)<input class="form-control" name="target_weight" value="{{ settings.get('target_weight', '') }}" type="number" min="0.1" max="1000" step="any"></label>
 </fieldset>
 <label><input type="checkbox" name="snack" {% if settings.get("snack") %}checked{% endif %}> Include a snack</label>
-<label class="full-width">Ingredients to exclude<input class="form-control" name="exclude" value="{{ settings.get('exclude', '') }}" placeholder="e.g. peanuts, eggs, milk" maxlength="180"><span class="field-hint">Use English names, separated by commas.</span></label>
+<label class="full-width" for="exclude">Ingredients to exclude
+<div class="ingredient-editor"><div class="ingredient-numbers" aria-hidden="true">1.</div><textarea id="exclude" data-numbered name="exclude" maxlength="180" rows="4" wrap="off" placeholder="Kacang&#10;Telur&#10;Susu" aria-describedby="excludeHelp">{{ settings.get('exclude', '') }}</textarea></div>
+<span id="excludeHelp" class="field-hint">Use your preferred language. Enter one ingredient per line; press Enter for the next.</span></label>
 <details class="optional-fields" {% if settings.get('calories') or settings.get('preferences') %}open{% endif %}>
 <summary>Calorie target &amp; other preferences <span>Optional</span></summary>
 <div class="optional-grid"><label>Daily calorie target <span class="field-hint">Optional · kcal per day</span><input class="form-control" name="calories" value="{{ settings.get('calories', '') }}" type="number" placeholder="e.g. 2000" inputmode="decimal" min="1" max="10000" step="any"></label>
-<label>Other preferences <span class="field-hint">Optional</span><input class="form-control" name="preferences" value="{{ settings.get('preferences', '') }}" placeholder="e.g. Malaysian dishes, budget-friendly" maxlength="180"></label>
+<label class="full-width" for="preferences">Other preferences <span class="field-hint">Optional</span>
+<div class="ingredient-editor"><div class="ingredient-numbers" aria-hidden="true">•</div><textarea id="preferences" data-numbered="bullets" name="preferences" rows="4" wrap="off" maxlength="180" placeholder="Malaysian dishes&#10;Budget-friendly&#10;Quick to prepare" aria-describedby="preferencesHelp">{{ settings.get('preferences', '') }}</textarea></div>
+<span id="preferencesHelp" class="field-hint">Use any language. Enter one preference per line; press Enter for the next bullet.</span></label>
 <p class="field-hint full-width">Your calorie target selects the closest available menu. Actual totals appear in your plan.</p></div></details>
 <p class="form-note">Recipes are plant-based. Check ingredients, packaging and cross-contact risks for every allergy. Nutrition values are estimates for one serving. Discuss medical dietary needs with a dietitian.</p>
 <div class="form-actions gap-4"><button class="btn btn-primary" name="action" value="generate">Generate plan</button></div></form>
-{% if draft %}<h2>{{ draft.goal }}</h2>
+{% if draft %}<div id="planResult" {% if plan_ready %}data-scroll-result{% endif %}><h2 id="planResultHeading" tabindex="-1">{{ draft.goal }}</h2>
 {% if draft.calories %}<p>Requested daily intake {{ draft.calories }} kcal</p>{% endif %}
-{% if draft.current_weight %}<p>Current weight {{ draft.current_weight }} kg · Target weight {{ draft.target_weight }} kg</p>{% endif %}<form method="post">{{ token() }}<button class="btn btn-primary" name="action" value="save">Save plan</button></form>
+{% if draft.current_weight %}<p>Current weight {{ draft.current_weight }} kg · Target weight {{ draft.target_weight }} kg</p>{% endif %}<form method="post" class="plan-save">{{ token() }}<button class="btn btn-primary" name="action" value="save">Save plan</button></form>
 {% for day in draft.ids|batch(draft.slots|length) %}{% set offset=loop.index0 * draft.slots|length %}
 <section class="plan-day"><h2>Day {{ loop.index }}</h2>{% set totals=namespace(k=0,p=0,c=0,f=0) %}
 {% for id in day %}{% set n=meals[id][3] %}{% set totals.k=totals.k+n[0] %}{% set totals.p=totals.p+n[1] %}{% set totals.c=totals.c+n[2] %}{% set totals.f=totals.f+n[3] %}{% endfor %}
 <p><strong>Day total</strong> · {{ totals.k }} kcal · Protein {{ totals.p }} g · Carbs {{ totals.c }} g · Fat {{ totals.f }} g</p>
 {% for id in day %}{% set name,ingredients,steps,n=meals[id] %}
-<details class="meal-entry"><summary>{{ draft.slots[loop.index0] }} · {{ name }}</summary><p>{{ ingredients }}</p><p>{{ steps }}</p>
+<details class="meal-entry"><summary>{{ draft.slots[loop.index0] }} · <span data-user-content>{{ name }}</span></summary><p data-user-content>{{ ingredients }}</p><p data-user-content>{{ steps }}</p>
 <p>{{ n[0] }} kcal · Protein {{ n[1] }} g · Carbs {{ n[2] }} g · Fat {{ n[3] }} g</p>
 <form method="post">{{ token() }}<input type="hidden" name="index" value="{{ offset+loop.index0 }}"><button class="btn btn-primary" name="action" value="swap" aria-label="Swap day {{ offset // draft.slots|length + 1 }} {{ draft.slots[loop.index0]|lower }}">Swap {{ draft.slots[loop.index0]|lower }}</button></form></details>
-{% endfor %}</section>{% endfor %}{% endif %}
-<h2>Saved plans</h2>{% for row in saved %}<form method="post">{{ token() }}<input type="hidden" name="id" value="{{ row.id }}">{{ row.label }}
-<button class="btn btn-primary" name="action" value="open" aria-label="Open {{ row.label }}">Open</button> <button class="btn btn-primary" name="action" value="delete" data-confirm="Delete {{ row.label }}? This cannot be undone." aria-label="Delete {{ row.label }}">Delete</button></form>{% else %}<p>No saved plans yet.</p>{% endfor %}
+{% endfor %}</section>{% endfor %}</div>{% endif %}
+<h2>Saved plans</h2>{% for row in saved %}<form method="post" id="saved-plan-{{ row.id }}" class="saved-plan-entry" tabindex="-1">{{ token() }}<input type="hidden" name="id" value="{{ row.id }}"><span>{{ row.label }}</span>
+<div class="saved-plan-actions"><button class="btn btn-primary" name="action" value="open" aria-label="Open {{ row.label }}">Open</button> <button class="btn btn-primary" name="action" value="delete" data-confirm="Delete {{ row.label }}? This cannot be undone." aria-label="Delete {{ row.label }}">Delete</button></div></form>{% else %}<p>No saved plans yet.</p>{% endfor %}
 <script>
 const goal = document.getElementById('goal');
 const weights = document.getElementById('weightFields');

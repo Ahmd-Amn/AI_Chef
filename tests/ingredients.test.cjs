@@ -4,11 +4,14 @@ const vm = require('node:vm');
 const handlers = {};
 const input = {value:'',scrollTop:0,addEventListener(name, callback){handlers[name]=callback}};
 const numbers = {};
+input.id='ingredients';
+input.getAttribute=()=>null;
+input.parentElement={querySelector:()=>numbers};
 const button = {disabled:false};
 let submits = 0;
 input.form = {requestSubmit(submitter){assert.equal(submitter,button); submits++;}};
 vm.runInNewContext(fs.readFileSync('public/static/ingredients.js','utf8'), {
-    document:{getElementById:id=>id==='ingredients'?input:id==='generateBtn'?button:numbers,addEventListener(name,callback){handlers[name]=callback}},
+    document:{querySelectorAll:()=>[input],getElementById:id=>id==='ingredients'?input:id==='generateBtn'?button:numbers,addEventListener(name,callback){handlers[name]=callback}},
     window:{addEventListener(){}}
 });
 handlers.DOMContentLoaded();
@@ -37,3 +40,9 @@ button.disabled=false;
 handlers.keydown({key:'Enter',shiftKey:true,isComposing:true});
 assert.equal(submits,1);
 console.log('Shift+Enter submits once, preserves Enter and respects pending generation and composition.');
+
+input.getAttribute=()=> 'bullets';
+input.value='1 cup rice\n1 glass Milo';
+handlers.input();
+assert.equal(numbers.textContent,'•\n•');
+console.log('Portion bullet markers follow each line.');

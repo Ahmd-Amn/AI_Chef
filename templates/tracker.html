@@ -6,26 +6,40 @@
 {% block content %}
 {% if field_errors %}<script type="application/json" id="fieldErrors">{{ field_errors|tojson }}</script>{% endif %}
 {% if error %}<p role="alert">{{ error }}</p>{% endif %}
+{% for message in get_flashed_messages(category_filter=['tracker_saved']) %}
+<dialog id="savedPopup" class="saved-popup" aria-labelledby="savedTitle">
+  <h2 id="savedTitle">{{ message }}</h2>
+  <form method="dialog"><button type="submit">Close</button></form>
+</dialog>
+{% endfor %}
 {% macro token() %}<input type="hidden" name="token" value="{{ session.csrf_token }}"><input type="hidden" name="date" value="{{ selected }}">{% endmacro %}
 {% macro nutrients(values) %}{{ values[0] }} kcal · Protein {{ values[1] }} g · Carbs {{ values[2] }} g · Fat {{ values[3] }} g{% endmacro %}
 <form method="get" class="date-filter"><label>Day <input type="date" name="date" value="{{ selected }}" required></label><button>View day</button></form>
-<p id="estimateStatus" role="status" aria-live="polite"></p>
+<dialog id="calculatingPopup" class="calculating-popup" aria-labelledby="calculatingTitle">
+  <span class="calculating-spinner" aria-hidden="true"></span>
+  <p id="calculatingTitle" role="status" aria-live="polite">Calculating…</p>
+</dialog>
 <script src="{{ url_for('static', filename='tracker.js') }}" defer></script>
 <form method="post" class="shadow-sm rounded-xl recipe-form meal-form">{{ token() }}
-<div class="form-heading"><h2>Enter your meal</h2><p>What did you eat? List your food and drinks below.</p></div>
-<label class="full-width">Your meal<input class="form-control" name="meal_name" value="{{ request.form.get('meal_name', '') }}" placeholder="nasi putih, kari ayam, air milo" maxlength="500" required aria-describedby="mealHelp"></label><p id="mealHelp" class="field-hint full-width">Separate foods with commas. Malay and English meal names are welcome.</p>
-<label class="full-width">Portion details <span class="field-hint">Optional · leave blank to review typical portions</span><input class="form-control" name="meal_portion" value="{{ request.form.get('meal_portion', '') }}" placeholder="1 cup rice, 1 piece chicken, 1 glass Milo" maxlength="200"></label>
+<div class="form-heading"><h2>Enter your meal</h2><p>Enter food, drinks, or both.</p></div>
+<label class="full-width" for="meal_name">Food or drinks
+<div class="ingredient-editor"><div class="ingredient-numbers" aria-hidden="true">1.</div><textarea id="meal_name" data-numbered name="meal_name" rows="4" wrap="off" maxlength="500" placeholder="Nasi putih&#10;Kari ayam&#10;Air Milo" required aria-describedby="mealHelp">{{ request.form.get('meal_name', '') }}</textarea></div></label>
+<p id="mealHelp" class="field-hint full-width">Use your preferred language. Enter one food or drink per line. Food only or drinks only is fine. Press Enter for the next.</p>
+<label class="full-width" for="meal_portion">Portion details <span class="field-hint">Optional · leave blank to review typical portions</span>
+<div class="ingredient-editor"><div class="ingredient-numbers" aria-hidden="true">•</div><textarea id="meal_portion" data-numbered="bullets" name="meal_portion" rows="4" wrap="off" maxlength="200" placeholder="1 cup rice&#10;1 piece chicken&#10;1 glass Milo" aria-describedby="portionHelp">{{ request.form.get('meal_portion', '') }}</textarea></div>
+<span id="portionHelp" class="field-hint">Enter one portion per line. Press Enter for the next bullet.</span></label>
 <div class="form-actions gap-4"><p class="field-hint">Review the estimate before adding it to your log.</p><button class="btn btn-primary" name="action" value="estimate">Estimate nutrition</button></div></form>
-{% if preview %}<form method="post" class="shadow-sm rounded-xl recipe-form estimate-review">{{ token() }}
-<div class="form-heading"><h2>Review your estimate</h2><p>Review AI estimate · Check the portions and adjust any values before saving.</p></div>
-<label>Meal<input class="form-control" name="meal_name" value="{{ preview.name }}" maxlength="500" required></label>
-<label>Portions<input class="form-control" name="meal_portion" value="{{ preview.portion }}" maxlength="200" required></label>
+{% if preview %}<form method="post" class="shadow-sm rounded-xl recipe-form estimate-review" id="nutritionEstimate">{{ token() }}
+<div class="form-heading"><h2 id="estimateHeading" tabindex="-1">Review your estimate</h2><p>Review AI estimate · Check the portions and adjust any values before saving.</p></div>
+<label>Meal<textarea class="form-control" name="meal_name" rows="4" maxlength="500" required>{{ preview.name }}</textarea></label>
+<label class="full-width" for="review_portion">Portions
+<div class="ingredient-editor"><div class="ingredient-numbers" aria-hidden="true">•</div><textarea id="review_portion" data-numbered="bullets" name="meal_portion" rows="4" wrap="off" maxlength="200" required>{{ preview.portion }}</textarea></div></label>
 {% for key,label in [('kcal','Calories (kcal)'),('protein_g','Protein (g)'),('carbs_g','Carbohydrate (g)'),('fat_g','Fat (g)')] %}
 <label>{{ label }}<input class="form-control" name="{{ key }}" type="number" value="{{ preview['values'][loop.index0] }}" min="0" max="10000" step="any" required></label>
 {% endfor %}<div class="form-actions gap-4"><button class="btn btn-primary" name="action" value="save_custom">Confirm and save meal</button></div></form>{% endif %}
 <h2>Daily total</h2><p>{{ nutrients(daily) }}</p>
 <h2>Seven days ending {{ selected }}</h2><p>{{ nutrients(weekly) }}</p>
-{% for row in custom %}<section><h3>{{ row.meal_name }}</h3><p>{{ row.portion }}</p>
+{% for row in custom %}<section id="food-log-{{ row.id }}" class="saved-food-entry" tabindex="-1"><h3 data-user-content>{{ row.meal_name }}</h3><p data-user-content>{{ row.portion }}</p>
 <p>{{ nutrients([row.kcal,row.protein_g,row.carbs_g,row.fat_g]) }} · Reviewed nutrition</p>
 <form method="post">{{ token() }}<input type="hidden" name="id" value="{{ row.id }}"><button class="btn btn-primary" name="action" value="delete_custom" data-confirm="Delete {{ row.meal_name }}? This cannot be undone." aria-label="Delete {{ row.meal_name }}">Delete meal</button></form></section>{% endfor %}
 {% endblock %}

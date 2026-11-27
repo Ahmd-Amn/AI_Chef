@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function openLibrary(favorites) {
-        if (document.getElementById('authPanel') && document.getElementById('authBtn').textContent.includes('Log in')) {
+        if (document.getElementById('authPanel') && document.getElementById('authBtn').dataset.loggedIn !== 'true') {
             document.getElementById('authPanel').showModal();
             return;
         }
@@ -32,9 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.className = 'recipe-row';
                 const title = document.createElement('strong');
                 title.className = 'recipe-row-title';
+                title.setAttribute('data-user-content', '');
                 title.textContent = recipe.title;
                 const ingredients = document.createElement('span');
                 ingredients.className = 'recipe-row-ingredients';
+                ingredients.setAttribute('data-user-content', '');
                 ingredients.textContent = recipe.ingredients;
                 button.append(title, ingredients);
                 button.onclick = async () => {
@@ -82,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
             current.favorite = !current.favorite;
             button.setAttribute('aria-pressed', String(current.favorite));
             button.textContent = current.favorite ? 'Remove from favorites' : 'Add to favorites';
+            if (!current.favorite) window.showRemoved();
         } catch (error) { status.textContent = error.message; }
         finally { button.disabled = false; }
     };

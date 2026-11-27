@@ -20,6 +20,7 @@
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 <script src="{{ url_for('static', filename='feedback.js') }}" defer></script>
 <script src="{{ url_for('static', filename='ingredients.js') }}" defer></script>
+<script src="{{ url_for('static', filename='language.js') }}" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to recipe maker</a>
@@ -35,7 +36,7 @@
             <label for="ingredients">What’s on your counter?</label>
             <div class="ingredient-editor">
               <div id="ingredientNumbers" class="ingredient-numbers" aria-hidden="true">1.</div>
-              <textarea id="ingredients" name="ingredients" aria-keyshortcuts="Shift+Enter" maxlength="1000" placeholder="Chicken&#10;Rice&#10;Broccoli&#10;Garlic" rows="4" wrap="off" aria-describedby="ingredientHelp" required></textarea>
+              <textarea id="ingredients" data-numbered name="ingredients" aria-keyshortcuts="Shift+Enter" maxlength="1000" placeholder="Chicken&#10;Rice&#10;Broccoli&#10;Garlic" rows="4" wrap="off" aria-describedby="ingredientHelp" required></textarea>
             </div>
             <div class="form-bottom"><span id="ingredientHelp">Enter one ingredient per line. Press Enter to add the next. <span class="desktop-shortcut">Shift + Enter to get a recipe.</span></span><button id="generateBtn" type="submit">Get a recipe <span aria-hidden="true"></span></button></div>
           </form>

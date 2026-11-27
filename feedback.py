@@ -1,6 +1,7 @@
 from flask import request
 
 SERVICE_ERROR = 'No services are available right now. Please try again later.'
+AI_RATE_ERROR = 'AI usage limit reached. Please try again later.'
 AI_ERROR = 'AI service temporarily unavailable; the system may be under maintenance. Please try again in about 1 minute. Recovery time is currently unknown.'
 
 
@@ -12,7 +13,7 @@ def form_errors():
             errors[key] = f'Use at most {limit} characters.'
     action = data.get('action')
     if action in ('estimate', 'save_custom') and not data.get('meal_name', '').strip():
-        errors['meal_name'] = 'Enter the food and drinks you had.'
+        errors['meal_name'] = 'Enter at least one food or drink.'
     if action == 'save_custom' and not data.get('meal_portion', '').strip():
         errors['meal_portion'] = 'Enter the portions you reviewed.'
     if action == 'generate':

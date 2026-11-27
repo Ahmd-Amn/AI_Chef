@@ -62,13 +62,13 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     };
     $('stopTimer').onclick = () => {
-        if (!confirm('Stop the active timer?')) return;
+        if (!confirm(window.uiText ? window.uiText('Stop the active timer?') : 'Stop the active timer?')) return;
         active.deadline = null;
         active.seconds = 0;
         tick();
     };
     $('finish').onclick = () => {
-        if (active.seconds && !confirm('Finish cooking and stop the active timer?')) return;
+        if (active.seconds && !confirm(window.uiText ? window.uiText('Finish cooking and stop the active timer?') : 'Finish cooking and stop the active timer?')) return;
         active.deadline = null;
         active.seconds = 0;
         active.step = 0;
